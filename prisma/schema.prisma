@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  relationMode = "foreignKeys"
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  name        String
+  username    String    @unique
+  email       String    @unique
+  dateOfBirth DateTime?
+  role        Role      @default(USER)
+  password    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  borrowing BorrowingProcess[]
+}
+
+model Book {
+  id                Int    @id @default(autoincrement())
+  ISBN              String @unique @db.VarChar(20)
+  title             String @unique
+  author            String
+  availableQuantity Int
+  shelfLocation     String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  borrowingProcess BorrowingProcess[]
+
+  @@index([author])
+}
+
+model BorrowingProcess {
+  id Int @id @default(autoincrement())
+
+  checkoutDate DateTime @default(now())
+  returnDate   DateTime @default(dbgenerated("CURRENT_DATE + INTERVAL '15 days'"))
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  borrower   User @relation(fields: [borrowerId], references: [id])
+  book       Book @relation(fields: [bookId], references: [id])
+  borrowerId Int
+  bookId     Int
+
+  @@unique([borrowerId, bookId])
+}
+
+enum Role {
+  ADMIN
+  USER
+}
